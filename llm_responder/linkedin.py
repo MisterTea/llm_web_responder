@@ -1,0 +1,178 @@
+import json
+import math
+import time
+
+import html2text
+import numpy as np
+from playwright.sync_api import sync_playwright
+
+from llm_responder.llm import llm
+
+QUESTIONS = [
+    "Is the message a sales pitch?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    "Is the message about applying to work at Latitude?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    "Does the message ask if Jason is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    "Is the message asking whether Latitude is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    "Is the message about asking someone to a meeting or consulation?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    "Is the message about recruitment services?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    "Is the message about hiring development teams?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+]
+PRODUCT_NAME = "LLM_Autoresponder"
+
+def random_sleep():
+    time.sleep(np.clip(np.random.normal(loc=1.5, scale=0.25, size=None), 1.0, 2.0))
+
+def pop_unread(safe_people:set, page):
+        page.goto("https://www.linkedin.com/messaging/?filter=unread")
+        print(page.title())
+        # Find all divs with class msg-conversation-card__content--selectable
+        # For each, click it
+        # Take the last p tag with class msg-s-event-listitem__body t-14 t-black--light t-normal
+        page.wait_for_selector(".msg-conversation-card__content--selectable")
+        random_sleep()
+        conversations = page.locator(".msg-conversation-card__content--selectable")
+        print(conversations)
+        conversation_to_click = None
+        person_in_conversation = None
+        for conversation in conversations.all():
+            print(conversation)
+            person = conversation.get_by_role("heading").inner_text()
+            print("PERSON", person)
+            if person in safe_people:
+                continue
+            conversation_to_click = conversation
+            person_in_conversation = person
+            break
+        if conversation_to_click is None:
+            print("NO UNREAD LEFT")
+            return False
+        conversation_to_click.click()
+
+        page.wait_for_selector(".msg-s-event-listitem__body")
+        random_sleep()
+        chat_messages = page.locator(".msg-s-event-listitem__body")
+        print(chat_messages)
+        all_chat_messages = chat_messages.all_inner_texts()
+        print(all_chat_messages)
+
+        skip = False
+        for m in all_chat_messages:
+            if PRODUCT_NAME in m:
+                print("FOUND PRODUCT")
+                print(m)
+                skip = True
+
+        if skip:
+            # Already handled, so mark as safe to avoid sending a second auto response
+            safe_people.add(person_in_conversation)
+            return True
+
+        auto_response = None
+
+        if True:
+            for message in all_chat_messages:
+                if auto_response is not None:
+                    break
+                for question in QUESTIONS:
+                    response = llm.llm(question,"Message: " + message, stop=[], echo=True)
+                    if response.lower().startswith("yes"):
+                        print("YES")
+                        print(message)
+                        print(response)
+                        auto_response = response
+                        break
+                    elif response.lower().startswith("no"):
+                        print("NO")
+                        print(message)
+                        print(response)
+                    else:
+                        print("OTHER")
+                        print(message)
+                        print(response)
+
+        if auto_response is not None:
+            auto_response = "Hello! This message has been muted by LLM_Autoresponder for this reason:\n\n" + auto_response + "\n\nIf you would like to work at Latitude AI or know someone who does, please visit our careers page: https://lat.ai/careers\n\nIf you actually know me personally, please contact me in another way, thanks!"
+            page.locator(".msg-form__contenteditable").fill(auto_response)
+            random_sleep()
+
+            page.locator(".msg-form__send-button").click()
+            random_sleep()
+
+            print("CLICKING")
+            print(page.locator(".msg__detail").locator(".msg-thread-actions__control").count())
+            page.locator(".msg__detail").locator(".msg-thread-actions__control").click()
+            random_sleep()
+
+            if page.locator(".msg__detail").get_by_text("Unmute").count() > 0:
+                # Already muted
+                print("ALREADY MUTED")
+            else:
+                print("CLICKING")
+                print(page.locator(".msg__detail").get_by_text("Mute").count())
+                page.locator(".msg__detail").get_by_text("Mute").click()
+                random_sleep()
+
+                print("CLICKING")
+                print(page.locator(".msg__detail").locator(".msg-thread-actions__control").count())
+                page.locator(".msg__detail").locator(".msg-thread-actions__control").click()
+                random_sleep()
+
+            print("CLICKING")
+            print(page.locator(".msg__detail").get_by_role("button").get_by_text("Other").count())
+            other_element = page.locator(".msg__detail").get_by_role("button").get_by_text("Other")
+            if other_element.count() > 0:
+                other_element.click()
+            random_sleep()
+
+            #page.locator(".msg-thread-actions__dropdown-options")[3].click()
+            #time.sleep(1.0)
+        else:
+            # Keep the message unread
+            print("CLICKING")
+            print(page.locator(".msg__detail").locator(".msg-thread-actions__control").count())
+            page.locator(".msg__detail").locator(".msg-thread-actions__control").click()
+            random_sleep()
+
+            print("CLICKING")
+            print(page.locator(".msg__detail").get_by_text("Unread").count())
+            page.locator(".msg__detail").get_by_text("Unread").click()
+            random_sleep()
+
+            print("NEED TO MARK AS SAFE")
+            print(f"{person_in_conversation} is safe")
+            safe_people.add(person_in_conversation)
+
+
+        # chat_text = ""
+        # chat_text = h2t.handle(chat_text)
+
+        return True
+
+
+def main():
+    safe_people = set()
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False, slow_mo=50)
+        context = browser.new_context()
+        with open("cookies.json") as fp:
+            cookies = json.load(fp)
+        context.add_cookies(cookies)
+        page = context.new_page()
+        try:
+            while pop_unread(safe_people):
+                pass
+        except KeyboardInterrupt:
+            print("Interrupted")
+        finally:
+            cookies = context.cookies()
+            print(json.dumps(cookies))
+            with open("cookies.json", "w") as fp:
+                json.dump(cookies, fp)
+            page.close()
+            context.close()
+            browser.close()
+
+
+main()
+
