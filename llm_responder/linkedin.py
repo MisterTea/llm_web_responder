@@ -2,7 +2,6 @@ import json
 import math
 import time
 
-import html2text
 import numpy as np
 from playwright.sync_api import sync_playwright
 
