@@ -8,11 +8,13 @@ from playwright.sync_api import sync_playwright
 
 from llm_responder.llm import llm
 
+MY_NAME = "Jason Gauci"
+MY_FIRST_NAME = "Jason"
 QUESTIONS = [
     "Is the author of the message applying to work at Latitude?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     "Is the message intended to entice the recipient to consider a job opportunity for themself?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     "Is the message a sales pitch?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
-    "Does the message ask if Jason is hiring other employees?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    f"Does the message ask if {MY_FIRST_NAME} is hiring other employees?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     "Is the message asking whether Latitude is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     "Is the message asking for a meeting or consulation?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     "Is the author of the message asking to share what their company does?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
@@ -22,7 +24,6 @@ QUESTIONS = [
     "Is the message about hiring development teams?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
 ]
 PRODUCT_NAME = "LLM_Autoresponder"
-MY_NAME = "Jason Gauci"
 
 def random_sleep(approx_seconds:float=1.0):
     time.sleep(np.clip(np.random.normal(loc=1.5 * approx_seconds, scale=0.25 * approx_seconds, size=None), 1.0 * approx_seconds, 2.0 * approx_seconds))
