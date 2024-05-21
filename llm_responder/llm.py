@@ -18,14 +18,23 @@ class LargeLanguageModel:
 
 
 class LlamaCppLanguageModel:
+    #MODEL_NAME = "Meta-Llama-3-8B-Instruct-Q5_K_M.gguf"
     #MODEL_NAME = "Meta-Llama-3-8B-Instruct-Q8_0.gguf"
-    MODEL_NAME = "Meta-Llama-3-8B-Instruct-Q5_K_M.gguf"
-    MODEL_PATH = "https://huggingface.co/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
-    CHAT_FORMAT = "llama-3"
+    #MODEL_PATH = "https://huggingface.co/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
+    
+    #MODEL_NAME = "Meta-Llama-3-70B-Instruct-IQ1_M.gguf"
+    #MODEL_NAME = "Meta-Llama-3-70B-Instruct-IQ2_XS.gguf"
+    #MODEL_NAME = "Meta-Llama-3-70B-Instruct-Q4_K_M.gguf"
+    #MODEL_PATH = "https://huggingface.co/lmstudio-community/Meta-Llama-3-70B-Instruct-GGUF/resolve/main"
 
-    #MODEL_NAME = "Phi-3-mini-4k-instruct-fp16.gguf"
-    #MODEL_PATH = "https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main"
-    #CHAT_FORMAT = "phi3"
+    #MODEL_NAME = "Meta-Llama-3-8B-Instruct-fp16.gguf"
+    #MODEL_PATH = "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
+    
+    #CHAT_FORMAT = "llama-3"
+
+    MODEL_NAME = "Phi-3-mini-4k-instruct-fp16.gguf"
+    MODEL_PATH = "https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main"
+    CHAT_FORMAT = "phi3"
 
     def __init__(self):
         self.llm_model = None
@@ -150,32 +159,34 @@ def download_file(url):
 llm = LlamaCppLanguageModel()
 #llm = OpenAiLanguageModel()
 
-#retval = llm.llm("Answer in a github flavored markdown table with columns \"question\" and \"answer\"", "What is the capital of France?", stop=[], echo=True)
+if __name__ == "__main__":
+    retval = llm.llm("Answer in a github flavored markdown table with columns \"question\" and \"answer\"", "What is the capital of France?", stop=[], echo=True)
 
-# questions = [
-#     "Is the message about applying to work at Latitude?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
-#     "Is the message about job opportunities?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
-#     "Does the message ask if Jason is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
-#     "Is the message asking whether Latitude is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
-#     "Is the message about asking someone to a meeting or consulation?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
-#     "Is the message about recruitment services?  Begin your answer with either \"yes\" or \"no\" followed by an explanation."
-#     "Is the message about hiring development teams?  Begin your answer with either \"yes\" or \"no\" followed by an explanation."
-# ]
-# for question in questions:
-#     retval = llm.llm(question,
-                    
-#                     """
-# Hi Jason,
+    questions = [
+        "Is the message about applying to work at Latitude?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+        "Is the message a candidate referral for a position at Jason's company?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+        "Is the message about job opportunities?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+        "Does the message ask if Jason is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+        "Is the message asking whether Latitude is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+        "Is the message about asking someone to a meeting or consulation?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+        "Is the message about recruitment services?  Begin your answer with either \"yes\" or \"no\" followed by an explanation."
+        "Is the message about hiring development teams?  Begin your answer with either \"yes\" or \"no\" followed by an explanation."
+    ]
+    for question in questions:
+        retval = llm.llm(question,
+                        
+                        """
+    Hi Jason,
 
-# I wanted to bring the attached candidate to your attention. She has just come on to the market and comes highly recommended from a reliable contact.
+    I wanted to bring the attached candidate to your attention. She has just come on to the market and comes highly recommended from a reliable contact.
 
-# Let me know if her profile could be of interest to you and your team?
+    Let me know if her profile could be of interest to you and your team?
 
-# Thanks!
+    Thanks!
 
-# Chris Hopkins
-# Vice President I USA | Tech Podcast Host | Entrepreneur | 🐍 Python Recruitment Specialist
-# """, stop=[], echo=True)
+    Chris Hopkins
+    Vice President I USA | Tech Podcast Host | Entrepreneur | 🐍 Python Recruitment Specialist
+    """, stop=[], echo=True)
 
-#     print(retval)
-#     print(retval.startswith("yes"))
+        print(retval)
+        print(retval.startswith("yes"))
