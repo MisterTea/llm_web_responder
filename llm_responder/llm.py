@@ -27,14 +27,14 @@ class LlamaCppLanguageModel:
     #MODEL_NAME = "Meta-Llama-3-70B-Instruct-Q4_K_M.gguf"
     #MODEL_PATH = "https://huggingface.co/lmstudio-community/Meta-Llama-3-70B-Instruct-GGUF/resolve/main"
 
-    #MODEL_NAME = "Meta-Llama-3-8B-Instruct-fp16.gguf"
-    #MODEL_PATH = "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
+    MODEL_NAME = "Meta-Llama-3-8B-Instruct-fp16.gguf"
+    MODEL_PATH = "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
     
-    #CHAT_FORMAT = "llama-3"
+    CHAT_FORMAT = "llama-3"
 
-    MODEL_NAME = "Phi-3-mini-4k-instruct-fp16.gguf"
-    MODEL_PATH = "https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main"
-    CHAT_FORMAT = "phi3"
+    #MODEL_NAME = "Phi-3-mini-4k-instruct-fp16.gguf"
+    #MODEL_PATH = "https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main"
+    #CHAT_FORMAT = "phi3"
 
     def __init__(self):
         self.llm_model = None
