@@ -4,10 +4,16 @@ import os
 import time
 from typing import List, Optional
 
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
+
 import requests
 from rich.progress import Progress
 
 logger = logging.getLogger(__name__)
+
+USE_GPU = True
 
 class LargeLanguageModel:
     def llm(self, system_prompt: str, user_prompt: str, stop: List[str] = [], echo: bool = False) -> str:
@@ -18,17 +24,17 @@ class LargeLanguageModel:
 
 
 class LlamaCppLanguageModel:
-    #MODEL_NAME = "Meta-Llama-3-8B-Instruct-Q5_K_M.gguf"
+    MODEL_NAME = "Meta-Llama-3-8B-Instruct-Q5_K_M.gguf"
     #MODEL_NAME = "Meta-Llama-3-8B-Instruct-Q8_0.gguf"
-    #MODEL_PATH = "https://huggingface.co/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
+    MODEL_PATH = "https://huggingface.co/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
     
     #MODEL_NAME = "Meta-Llama-3-70B-Instruct-IQ1_M.gguf"
     #MODEL_NAME = "Meta-Llama-3-70B-Instruct-IQ2_XS.gguf"
     #MODEL_NAME = "Meta-Llama-3-70B-Instruct-Q4_K_M.gguf"
     #MODEL_PATH = "https://huggingface.co/lmstudio-community/Meta-Llama-3-70B-Instruct-GGUF/resolve/main"
 
-    MODEL_NAME = "Meta-Llama-3-8B-Instruct-fp16.gguf"
-    MODEL_PATH = "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
+    #MODEL_NAME = "Meta-Llama-3-8B-Instruct-fp16.gguf"
+    #MODEL_PATH = "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main"
     
     CHAT_FORMAT = "llama-3"
 
@@ -63,7 +69,7 @@ class LlamaCppLanguageModel:
 
             self.llm_model = Llama(
                 model_path=model_path,
-                n_gpu_layers=-1, # Use gpu
+                n_gpu_layers=-1 if USE_GPU else 0, # Use gpu
                 n_ctx=4000,
                 n_threads=multiprocessing.cpu_count(),
                 embedding=True,
@@ -94,7 +100,9 @@ class LlamaCppLanguageModel:
 
 class OpenAiLanguageModel:
     def __init__(self):
-        pass
+        from openai import OpenAI
+
+        self.client = OpenAI()
 
     def model_name(self):
         return "gpt-3.5-turbo"
@@ -102,14 +110,12 @@ class OpenAiLanguageModel:
     def llm(self, system_prompt: str, user_prompt: str, stop: Optional[List[str]] = None, echo: bool = False) -> str:
         import openai
 
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-
         if stop is not None and len(stop) == 0:
             stop = None
 
         for x in range(0, 5):
             try:
-                response = openai.ChatCompletion.create(
+                response = self.client.chat.completions.create(
                     model=self.model_name(),
                     messages=[
                         {"role": "system", "content": system_prompt},
@@ -117,8 +123,9 @@ class OpenAiLanguageModel:
                     ],
                     stop=stop,
                 )
-                return response["choices"][0]["message"]["content"]
-            except openai.error.RateLimitError as ex:
+                print(response)
+                return response.choices[0].message.content
+            except openai.RateLimitError as ex:
                 logger.debug("Rate limit error: " + str(ex))
                 time.sleep(5.0)
         raise Exception("OpenAI Rate Limit 5 times")
@@ -156,8 +163,8 @@ def download_file(url):
         raise
 
 
-llm = LlamaCppLanguageModel()
-#llm = OpenAiLanguageModel()
+#llm = LlamaCppLanguageModel()
+llm = OpenAiLanguageModel()
 
 if __name__ == "__main__":
     retval = llm.llm("Answer in a github flavored markdown table with columns \"question\" and \"answer\"", "What is the capital of France?", stop=[], echo=True)

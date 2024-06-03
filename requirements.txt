@@ -2,3 +2,5 @@ playwright
 llama-cpp-python
 rich
 numpy
+openai
+python-dotenv

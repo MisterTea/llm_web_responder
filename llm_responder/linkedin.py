@@ -2,6 +2,10 @@ import json
 import math
 import time
 
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
+
 import numpy as np
 from playwright.sync_api import sync_playwright
 
@@ -202,12 +206,13 @@ def pop_unread(safe_people:set, page):
 
         return True
 
+HEADLESS = False
 
 def main():
     safe_people = set()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=50)
+        browser = p.chromium.launch(headless=HEADLESS, slow_mo=50)
         context = browser.new_context()
         try:
             with open("cookies.json") as fp:
@@ -231,5 +236,6 @@ def main():
             browser.close()
 
 
-main()
+if __name__ == "__main__":
+    main()
 
