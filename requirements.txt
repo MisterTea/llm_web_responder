@@ -4,3 +4,4 @@ rich
 numpy
 openai
 python-dotenv
+requests
