@@ -66,8 +66,12 @@ def pop_unread(safe_people:set, page):
         # Find all divs with class msg-conversation-card__content--selectable
         # For each, click it
         # Take the last p tag with class msg-s-event-listitem__body t-14 t-black--light t-normal
-        page.wait_for_selector(".msg-conversation-card__content--selectable")
-        random_sleep(3)
+        try:
+            page.wait_for_selector(".msg-conversation-card__content--selectable")
+            random_sleep(3)
+        except:
+            print("NO UNREAD LEFT")
+            return False
         conversations = page.locator(".msg-conversation-card__content--selectable")
         print(conversations)
         conversation_to_click = None
