@@ -15,7 +15,7 @@ MY_NAME = "Jason Gauci"
 MY_FIRST_NAME = "Jason"
 QUESTIONS = [
     "Is the author of the message applying to work at Latitude?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
-    "Is the message intended to entice the recipient to consider a job opportunity for themself?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
+    "Is the message asking the recipient to apply for a job at the author's company?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     "Is the message a sales pitch?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     f"Does the message ask if {MY_FIRST_NAME} is hiring other employees?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
     "Is the message asking whether Latitude is hiring?  Begin your answer with either \"yes\" or \"no\" followed by an explanation.",
@@ -121,6 +121,7 @@ def pop_unread(safe_people:set, page):
             return True
 
         auto_response = None
+        all_chat_messages = ['\n\n'.join(all_chat_messages)]
 
         if True:
             for i, question in enumerate(QUESTIONS):
@@ -226,7 +227,10 @@ def main():
         context.add_cookies(cookies)
         page = context.new_page()
         try:
+            a = 0
             while pop_unread(safe_people, page):
+                a += 1
+                if a == 10: return
                 pass
         except KeyboardInterrupt:
             print("Interrupted")
