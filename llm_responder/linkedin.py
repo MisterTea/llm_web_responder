@@ -268,7 +268,6 @@ def main():
             print("Interrupted")
         finally:
             cookies = context.cookies()
-            print(json.dumps(cookies))
             with open("cookies.json", "w") as fp:
                 json.dump(cookies, fp)
             page.close()
