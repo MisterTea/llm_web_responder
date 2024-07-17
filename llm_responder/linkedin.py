@@ -31,6 +31,44 @@ PRODUCT_NAME = "LLM_Autoresponder"
 def random_sleep(approx_seconds:float=1.0):
     time.sleep(np.clip(np.random.normal(loc=1.5 * approx_seconds, scale=0.25 * approx_seconds, size=None), 1.0 * approx_seconds, 2.0 * approx_seconds))
 
+def handle_login(page):
+    print("Please log in using the window provided...")
+    while True:
+        print(page.context.cookies())
+        time.sleep(1.0)
+        cookies = page.context.cookies()
+        print("***")
+        for cookie in cookies:
+            print(cookie["name"])
+            if cookie["name"] == "li_at":
+                print(json.dumps(cookies))
+                with open("cookies.json", "w") as fp:
+                    json.dump(cookies, fp)
+                return True
+
+def accept_friend_request(page):
+    page.goto("https://www.linkedin.com/mynetwork/invitation-manager/")
+    print(page.title())
+
+    random_sleep(3)
+    if page.get_by_role("heading", name="Sign In").count() > 0:
+        handle_login(page)
+        return True
+
+    accept_buttons = page.get_by_role("button", name="Accept").all()
+
+    got_friends = False
+
+    for accept_button in accept_buttons:
+        accept_button.click(force=True)
+        got_friends = True
+        random_sleep(3)
+    
+    return got_friends
+
+
+
+
 def keep_message_unread(page):
     print("CLICKING")
     print(page.locator(".msg__detail").locator(".msg-thread-actions__control").count())
@@ -42,26 +80,15 @@ def keep_message_unread(page):
     page.locator(".msg__detail").get_by_text("Unread").click(force=True)
     random_sleep()
 
-def pop_unread(safe_people:set, page):
+def handle_unread_message(safe_people:set, page):
         page.goto("https://www.linkedin.com/messaging/?filter=unread")
         print(page.title())
 
 
         random_sleep(3)
         if page.get_by_role("heading", name="Sign In").count() > 0:
-            print("Please log in using the window provided...")
-            while True:
-                print(page.context.cookies())
-                time.sleep(1.0)
-                cookies = page.context.cookies()
-                print("***")
-                for cookie in cookies:
-                    print(cookie["name"])
-                    if cookie["name"] == "li_at":
-                        print(json.dumps(cookies))
-                        with open("cookies.json", "w") as fp:
-                            json.dump(cookies, fp)
-                        return True
+            handle_login(page)
+            return True
 
         # Find all divs with class msg-conversation-card__content--selectable
         # For each, click it
@@ -228,7 +255,12 @@ def main():
         page = context.new_page()
         try:
             a = 0
-            while pop_unread(safe_people, page):
+            # Accept any friend requests
+            while accept_friend_request(page):
+                a += 1
+                if a == 10: return
+                pass
+            while handle_unread_message(safe_people, page):
                 a += 1
                 if a == 10: return
                 pass
