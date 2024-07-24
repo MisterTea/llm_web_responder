@@ -105,7 +105,8 @@ class OpenAiLanguageModel:
         self.client = OpenAI()
 
     def model_name(self):
-        return "gpt-3.5-turbo"
+        return "gpt-4o-mini-2024-07-18"
+        #return "gpt-3.5-turbo"
 
     def llm(self, system_prompt: str, user_prompt: str, stop: Optional[List[str]] = None, echo: bool = False) -> str:
         import openai
