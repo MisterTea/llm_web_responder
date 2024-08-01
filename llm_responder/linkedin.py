@@ -1,8 +1,14 @@
+import io
 import json
 import math
+import os
 import time
 
 from dotenv import load_dotenv
+from PIL import Image
+
+from llm_responder.vlm import (GptVisionLanguageModel, Phi3VisionLanguageModel,
+                               VisionLanguageModel)
 
 load_dotenv()  # take environment variables from .env.
 
@@ -31,7 +37,60 @@ PRODUCT_NAME = "LLM_Autoresponder"
 def random_sleep(approx_seconds:float=1.0):
     time.sleep(np.clip(np.random.normal(loc=1.5 * approx_seconds, scale=0.25 * approx_seconds, size=None), 1.0 * approx_seconds, 2.0 * approx_seconds))
 
-def handle_login(page):
+def handle_login(page, vlm:VisionLanguageModel):
+    for _attempts in range(10):
+        website_screenshot = Image.open(io.BytesIO(page.screenshot(full_page=True)))
+
+        result = vlm.vlm(website_screenshot, "<|image_1|>\nIs there a form where I can enter my email address and password?", "Begin your answer with 'yes' or 'no' followed by an explanation.")
+
+        if result.strip("'\"").lower().startswith("yes"):
+            result = vlm.vlm(website_screenshot, "<|image_1|>\nWhere do I enter my email address?", "Begin your answer with the name of the field in single quotes followed by a newline and then an explanation on the second line.")
+
+            assert result[0] == '\'',  f"Unexpected result: {result}"
+
+            label = result[1:].split("'")[0]
+            print("GOT LABEL: ",label)
+
+            page.get_by_label(label).fill(os.environ["LINKEDIN_USERNAME"])
+
+            result = vlm.vlm(website_screenshot, "<|image_1|>\nWhere do I enter my password?", "Begin your answer with the name of the field in single quotes followed by a newline and then an explanation on the second line.")
+
+            assert result[0] == '\'',  f"Unexpected result: {result}"
+
+            label = result[1:].split("'")[0]
+            print("GOT LABEL: ",label)
+
+            page.get_by_label(label).fill(os.environ["LINKEDIN_PASSWORD"])
+
+            result = vlm.vlm(website_screenshot, "<|image_1|>\nWhat do I click on to sign in with my email address and password?", "Begin your answer with the name of the button in single quotes followed by a newline and then an explanation on the second line.")
+
+            assert result[0] == '\'',  f"Unexpected result: {result}"
+
+            label_to_click_on = result[1:].split("'")[0]
+            print("GOT LABEL TO CLICK ON: ",label_to_click_on)
+
+            page.get_by_role("button", name=label_to_click_on, exact=True).click()
+            random_sleep(3)
+
+            # TODO: Check if we are logged in somehow
+            return
+
+        elif result.strip("'\"").lower().startswith("no'"):
+            result = vlm.vlm(website_screenshot, "<|image_1|>\nWhat do I click on to sign in with my email address and password?", "Begin your answer with the name of the button in single quotes followed by an explanation.")
+
+            assert result[0] == '\'',  f"Unexpected result: {result}"
+
+            label_to_click_on = result[1:].split("'")[0]
+            print("GOT LABEL TO CLICK ON: ",label_to_click_on)
+
+            page.get_by_role("button", name=label_to_click_on).click()
+            random_sleep(3)
+            continue
+        else:
+            assert False, f"Unexpected result: {result}"
+    raise ValueError("Failed after too many attempts")
+
+    """
     print("Please log in using the window provided...")
     while True:
         print(page.context.cookies())
@@ -45,14 +104,15 @@ def handle_login(page):
                 with open("cookies.json", "w") as fp:
                     json.dump(cookies, fp)
                 return True
+    """
 
-def accept_friend_request(page):
+def accept_friend_request(page, vlm):
     page.goto("https://www.linkedin.com/mynetwork/invitation-manager/")
     print(page.title())
 
     random_sleep(3)
     if page.get_by_role("heading", name="Sign In").count() > 0:
-        handle_login(page)
+        handle_login(page, vlm)
         return True
 
     accept_buttons = page.get_by_role("button", name="Accept").all()
@@ -241,6 +301,8 @@ def handle_unread_message(safe_people:set, page):
 HEADLESS = False
 
 def main():
+    #vlm = Phi3VisionLanguageModel()
+    vlm = GptVisionLanguageModel()
     safe_people = set()
 
     with sync_playwright() as p:
@@ -256,7 +318,7 @@ def main():
         try:
             a = 0
             # Accept any friend requests
-            while accept_friend_request(page):
+            while accept_friend_request(page, vlm):
                 a += 1
                 if a == 10: return
                 pass
